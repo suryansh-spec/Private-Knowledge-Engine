@@ -40,7 +40,7 @@ services:
     environment:
       - QDRANT_HOST=qdrant
       - OLLAMA_HOST=http://ollama:11434
-      - API_KEY=system_from_30603584_986000
+      - API_KEY=your_key_here
 
 volumes:
   ollama_data:
