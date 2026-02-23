@@ -12,7 +12,6 @@ QDRANT_PORT = 6333
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 # IMPORTANT: Put your actual API key in docker-compose.yml
-# Never hardcode secret keys in source code.
 API_KEY = os.getenv("API_KEY", "change_me")
 
 COLLECTION_NAME = "study_docs"
