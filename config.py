@@ -16,5 +16,5 @@ API_KEY = os.getenv("API_KEY", "change_me")
 
 COLLECTION_NAME = "study_docs"
 
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "nomic-embed-text"
 EMBEDDING_DIM = 768
