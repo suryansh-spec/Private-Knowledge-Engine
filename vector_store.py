@@ -7,46 +7,40 @@ This module handles:
 - Collection creation
 - Storing embeddings
 - Searching
-
-isolating DB logic from RAG logic.
 """
 
 client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 
+from qdrant_client.http.exceptions import UnexpectedResponse
+
 def create_collection_if_not_exists():
-    """
-    Creates collection once.
-    """
     try:
         client.get_collection(COLLECTION_NAME)
-    except:
-        client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(
-                size=EMBEDDING_DIM,
-                distance=Distance.COSINE
-            ),
-        )
+    except UnexpectedResponse as e:
+        if e.status_code == 404:
+            client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=VectorParams(
+                    size=EMBEDDING_DIM,
+                    distance=Distance.COSINE
+                ),
+            )
+        else:
+            raise
 
+
+from qdrant_client.models import VectorParams, Distance, PointStruct
 
 def add_document(doc_id: str, vector, payload: dict):
-    """
-    Stores one chunk.
-
-    payload contains:
-    - text
-    - source file
-    - optional metadata
-    """
     client.upsert(
         collection_name=COLLECTION_NAME,
         points=[
-            {
-                "id": doc_id,
-                "vector": vector,
-                "payload": payload
-            }
+            PointStruct(
+                id=doc_id,
+                vector=vector,
+                payload=payload
+            )
         ]
     )
 
@@ -64,7 +58,7 @@ def search(query_vector, limit=5):
         limit=limit
     )
 
-    # Case 1: Newer client returns (QueryResponse, time)
+    # Case 1: newer client returns (QueryResponse, time)
     if isinstance(response, tuple):
         response = response[0]
 
@@ -72,7 +66,7 @@ def search(query_vector, limit=5):
     if hasattr(response, "points"):
         return response.points
 
-    # Case 3: Already a list
+    # Case 3: already a list
     if isinstance(response, list):
         return response
 
