@@ -7,14 +7,14 @@ def generate_answer(query: str):
     query_vector = embed_text(query)
     results = search(query_vector)
 
-    # ---- DEBUG NORMALIZATION ----
+    #DEBUG NORMALIZATION
     if isinstance(results, tuple):
         # Sometimes query_points returns (points, time)
         results = results[0]
 
     # If results is QueryResponse-like
     if hasattr(results, "points"):
-        results = results.points
+        results = results.points # type: ignore
 
     # If results contains tuple elements like (ScoredPoint, score)
     cleaned = []
@@ -37,9 +37,13 @@ def generate_answer(query: str):
     prompt = f"""
 You are a study assistant.
 
-Use the provided context to answer the question clearly and concisely.
-If the answer is not found in the context, say you don't know.
-If the user asks for a long 10 mark explanation, provide 300-400 words of content including bullet points and a NOTE: section.
+
+Rules:
+- If the query contains MULTIPLE questions, answer EVERY single one separately.
+- Label each answer clearly as Q1, Q2, Q3,etc.
+- For each 10-mark question, write 300-400 words with bullet points and end with a NOTE: section summarizing key takeaways.
+- If the answer to a specific question is not found in the context, say "Not found in study material" for that question but still attempt a general answer.
+- Do NOT skip any question. Do NOT stop early.
 
 Context:
 {context}
@@ -50,14 +54,21 @@ Question:
 Answer:
 """
 
-    response = requests.post(
-        f"{OLLAMA_HOST}/api/generate",
-        json={
-            "model": "mistral",
-            "prompt": prompt,
-            "stream": False
-        }
-    )
-
-    # Safely return the string response from Ollama
-    return response.json().get("response", "No response generated.")
+    try:
+        response = requests.post(
+            f"{OLLAMA_HOST}/api/generate",
+            json={
+                "model": "mistral",
+                "prompt": prompt,
+                "stream": False
+                "options": {
+                "num_predict": 4096,  
+                "temperature": 0.3 
+                }
+            },
+            timeout=120
+        )
+        response.raise_for_status()
+        return response.json().get("response", "No response generated.")
+    except requests.exceptions.RequestException as e:
+        raise RuntimeError(f"Failed to generate answer from Ollama: {e}")
