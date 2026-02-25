@@ -11,11 +11,6 @@ Utility module for:
 def load_pdf(path: str) -> str:
     """
     Extracts text from PDF using PyMuPDF.
-
-    Important design decisions:
-    - open the document safely.
-    - iterate page-by-page to avoid loading massive PDFs at once.
-    - concatenate text cleanly.
     """
 
     text_chunks = []
@@ -42,19 +37,16 @@ def load_pdf(path: str) -> str:
 
 
 def chunk_text(text: str, chunk_size: int = 800, overlap: int = 150):
-    """
-    Splits text into overlapping chunks.
-    """
-
+    if overlap >= chunk_size:
+        raise ValueError("overlap must be less than chunk_size")
+    
     chunks = []
     start = 0
     text_length = len(text)
 
     while start < text_length:
         end = start + chunk_size
-        chunk = text[start:end]
-        chunks.append(chunk)
-
+        chunks.append(text[start:end])
         start += chunk_size - overlap
 
     return chunks
